@@ -5,23 +5,23 @@ import 'package:flutter/material.dart';
 class Square extends StatelessWidget {
   final bool isWhite;
   final ChessPiece? piece;
-  final bool isselected;
+  final bool isSelected;
   final void Function()? onTab;
 
   const Square({
     super.key,
     required this.isWhite,
     required this.piece,
-    required this.isselected,
-    this.onTab,
+    required this.isSelected,
+    required this.onTab,
   });
 
   @override
   Widget build(BuildContext context) {
     Color? squareColor;
 
-    // id selected , square is green
-    if (isselected) {
+    // if selected , square is green
+    if (isSelected) {
       squareColor = Colors.green;
     }
 
@@ -31,7 +31,7 @@ class Square extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: () => onTab,
+      onTap: onTab,
       child: Container(
         color: squareColor,
         child: piece != null
