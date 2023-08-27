@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:chess/components/piece.dart';
 import 'package:chess/components/square.dart';
 import 'package:chess/helper/heloer_methods.dart';
@@ -27,6 +29,10 @@ class _GameBoardState extends State<GameBoard> {
   /// The col index of the selected piece
   /// Default value is -1 indicated no piece is currenly selected
   int selectedCol = -1;
+
+  /// A list of valid moves the currently selected piece
+  /// each move is represnted ad a list with 2 element: row and col
+  List<List<int>> validMoves = [];
 
   @override
   void initState() {
@@ -156,7 +162,62 @@ class _GameBoardState extends State<GameBoard> {
         selectedRow = row;
         selectedCol = col;
       }
+
+      // if a piece is selected, calculate it's valid moves
+      validMoves =
+          calculateRawValidMoves(selectedRow, selectedCol, selectedPiece);
     });
+  }
+
+  // CALCAULATE RAW VALID MOVES
+  List<List<int>> calculateRawValidMoves(int row, int col, ChessPiece? piece) {
+    List<List<int>> candidateMoves = [];
+
+    int direction = piece!.isWhite ? -1 : 1;
+
+    switch (piece.type) {
+      case ChessPieceType.pwan:
+        // pawns can move forward if the square is not occupid
+        if (isInBoard(row + direction, col) &&
+            board[row + direction][col] == null) {
+          candidateMoves.add([row + direction, col]);
+        }
+
+        // pwans can move 2 squares forward if they are at their initial posistions
+        if ((row == 1 && !piece.isWhite) || (row == 6 && piece.isWhite)) {
+          if (isInBoard(row + 2 * direction, col) &&
+              board[row + 2 * direction][col] == null &&
+              board[row + direction][col] == null) {
+            candidateMoves.add([row + 2 * direction, col]);
+          }
+        }
+
+        // pwans can kill diagonally
+        if (isInBoard(row + direction, col - 1) &&
+            board[row + direction][col - 1] != null &&
+            board[row + direction][col - 1]!.isWhite) {
+          candidateMoves.add([row + direction, col - 1]);
+        }
+        if (isInBoard(row + direction, col + 1) &&
+            board[row + direction][col + 1] != null &&
+            board[row + direction][col + 1]!.isWhite) {
+          candidateMoves.add([row + direction, col + 1]);
+        }
+        break;
+      case ChessPieceType.rook:
+        break;
+      case ChessPieceType.knight:
+        break;
+      case ChessPieceType.bishop:
+        break;
+      case ChessPieceType.queen:
+        break;
+      case ChessPieceType.king:
+        break;
+
+      default:
+    }
+    return candidateMoves;
   }
 
   @override
@@ -176,10 +237,21 @@ class _GameBoardState extends State<GameBoard> {
 
           // check if this square is seleted
           bool isSelected = selectedRow == row && selectedCol == col;
+
+          //check if square is a valid move
+          bool isValidMove = false;
+          for (var position in validMoves) {
+            // compare row and col
+            if (position[0] == row && position[1] == col) {
+              isValidMove = true;
+            }
+          }
+
           return Square(
             isWhite: isWhite(index),
             piece: board[row][col],
             isSelected: isSelected,
+            isValidMove: isValidMove,
             onTab: () => pieceSelected(row, col),
           );
         },
