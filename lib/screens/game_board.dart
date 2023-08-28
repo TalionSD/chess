@@ -49,11 +49,11 @@ class _GameBoardState extends State<GameBoard> {
     );
 
     // place random piece in middle to test
-    newBoard[3][3] = ChessPiece(
-      type: ChessPieceType.rook,
-      isWhite: false,
-      imagePath: 'assets/images/rook.png',
-    );
+    // newBoard[3][3] = ChessPiece(
+    //   type: ChessPieceType.king,
+    //   isWhite: false,
+    //   imagePath: 'assets/images/king.png',
+    // );
 
     // Place pawns
     for (int i = 0; i < 8; i++) {
@@ -169,6 +169,11 @@ class _GameBoardState extends State<GameBoard> {
         selectedRow = row;
         selectedCol = col;
       }
+      // if there is a piece selected and user taps on a square that is a valid ove, move there
+      else if (selectedPiece != null &&
+          validMoves.any((element) => element[0] == row && element[1] == col)) {
+        movePiece(row, col);
+      }
 
       // if a piece is selected, calculate it's valid moves
       validMoves =
@@ -180,7 +185,12 @@ class _GameBoardState extends State<GameBoard> {
   List<List<int>> calculateRawValidMoves(int row, int col, ChessPiece? piece) {
     List<List<int>> candidateMoves = [];
 
-    int direction = piece!.isWhite ? -1 : 1;
+    if (piece == null) {
+      return [];
+    }
+
+    // different directions based on their color
+    int direction = piece.isWhite ? -1 : 1;
 
     switch (piece.type) {
       case ChessPieceType.pwan:
@@ -277,7 +287,7 @@ class _GameBoardState extends State<GameBoard> {
         ];
 
         for (var direction in directions) {
-          var i = 0;
+          var i = 1;
           while (true) {
             var newRow = row + i * direction[0];
             var newCol = col + i * direction[1];
@@ -313,7 +323,7 @@ class _GameBoardState extends State<GameBoard> {
 
           while (true) {
             var newRow = row + i * direction[0];
-            var newCol = row + i * direction[1];
+            var newCol = col + i * direction[1];
             if (!isInBoard(newRow, newCol)) {
               break;
             }
@@ -342,7 +352,7 @@ class _GameBoardState extends State<GameBoard> {
         ];
         for (var direction in directions) {
           var newRow = row + direction[0];
-          var newCol = row + direction[1];
+          var newCol = col + direction[1];
           if (!isInBoard(newRow, newCol)) {
             continue;
           }
@@ -360,6 +370,21 @@ class _GameBoardState extends State<GameBoard> {
       default:
     }
     return candidateMoves;
+  }
+
+  // MOVE PIECE
+  void movePiece(int newRow, int newCol) {
+    // move the piece and clear the old spot
+    board[newRow][newCol] = selectedPiece;
+    board[selectedRow][selectedCol] = null;
+
+    // clear selection
+    setState(() {
+      selectedPiece = null;
+      selectedRow = -1;
+      selectedCol = -1;
+      validMoves = [];
+    });
   }
 
   @override
