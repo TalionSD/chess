@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:chess/components/dead_piece.dart';
 import 'package:chess/components/piece.dart';
 import 'package:chess/components/square.dart';
@@ -62,13 +60,6 @@ class _GameBoardState extends State<GameBoard> {
       8,
       (index) => List.generate(8, (index) => null),
     );
-
-    // place random piece in middle to test
-    // newBoard[3][3] = ChessPiece(
-    //   type: ChessPieceType.king,
-    //   isWhite: false,
-    //   imagePath: 'assets/images/king.png',
-    // );
 
     // Place pawns
     for (int i = 0; i < 8; i++) {
@@ -202,8 +193,8 @@ class _GameBoardState extends State<GameBoard> {
       }
 
       // if a piece is selected, calculate it's valid moves
-      validMoves =
-          calculateRawValidMoves(selectedRow, selectedCol, selectedPiece);
+      validMoves = calculateRealValidMoves(
+          selectedRow, selectedCol, selectedPiece, true);
     });
   }
 
@@ -398,7 +389,7 @@ class _GameBoardState extends State<GameBoard> {
     return candidateMoves;
   }
 
-  // CALCULATE  REAL VALID MOVES
+  // CALCULATE REAL VALID MOVES
   List<List<int>> calculateRealValidMoves(
       int row, int col, ChessPiece? piece, bool checkSimulation) {
     List<List<int>> realValidMoves = [];
@@ -411,7 +402,7 @@ class _GameBoardState extends State<GameBoard> {
         int endCol = move[1];
 
         // this will simulate the future move to see if it's safe
-        if (simulatedMoveIsSafe()) {
+        if (simulatedMoveIsSafe(piece!, row, col, endRow, endCol)) {
           realValidMoves.add(move);
         }
       }
@@ -479,7 +470,7 @@ class _GameBoardState extends State<GameBoard> {
           continue;
         }
         List<List<int>> pieceValidMoves =
-            calculateRawValidMoves(i, j, board[i][j]);
+            calculateRealValidMoves(i, j, board[i][j], false);
 
         // check if the king's position is in this piece's valid moves
         if (pieceValidMoves.any((move) =>
@@ -493,18 +484,46 @@ class _GameBoardState extends State<GameBoard> {
 
   // SIMULATE A FUTURE MOVE TO SEE IF IT'S SAFE(DOESN'T PUT YOUR OWN KING UNDER ATTACK!)
   bool simulatedMoveIsSafe(
-      ChessPiece piece, int startRow, int startCol, int endStart, int endCol) {
+      ChessPiece piece, int startRow, int startCol, int endRow, int endCol) {
     // save the current board state
+    ChessPiece? originalDestinationPiece = board[endRow][endCol];
 
     // if the piece is the king, save it's current position and update to the new one
+    List<int>? originalKingPosition;
+    if (piece.type == ChessPieceType.king) {
+      originalKingPosition =
+          piece.isWhite ? whiteKingPosition : blackKingPosition;
+
+      // update the king position
+      if (piece.isWhite) {
+        whiteKingPosition = [endRow, endCol];
+      } else {
+        blackKingPosition = [endRow, endCol];
+      }
+    }
 
     // simulate the move
+    board[endRow][endCol] = piece;
+    board[startRow][startCol] = null;
 
     // check if our own king is under attack
+    bool kingInCheck = isKingInCheck(piece.isWhite);
 
     // resore board to original state
+    board[startRow][startCol] = piece;
+    board[endRow][endCol] = originalDestinationPiece;
 
     // if the piece was the king, restore it original position
+    if (piece.type == ChessPieceType.king) {
+      if (piece.isWhite) {
+        whiteKingPosition = originalKingPosition!;
+      } else {
+        blackKingPosition = originalKingPosition!;
+      }
+    }
+
+    // if king is in check = true, means it's not a safe move. safe move = false
+    return !kingInCheck;
   }
 
   @override
