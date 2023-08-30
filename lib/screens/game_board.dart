@@ -452,6 +452,22 @@ class _GameBoardState extends State<GameBoard> {
       validMoves = [];
     });
 
+    // check if it's check mate
+    if (isCheckMate(!isWhiteTurn)) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('کیش و مات!'),
+          actions: [
+            TextButton(
+              onPressed: resetGame,
+              child: const Text('بازی مجدد'),
+            )
+          ],
+        ),
+      );
+    }
+
     // change turns
     isWhiteTurn = !isWhiteTurn;
   }
@@ -526,6 +542,48 @@ class _GameBoardState extends State<GameBoard> {
     return !kingInCheck;
   }
 
+  // IS IT CHECK MATE?
+  bool isCheckMate(bool isWhiteKing) {
+    // if the king is not in check, then it's not checkmte
+    if (!isKingInCheck(isWhiteKing)) {
+      return false;
+    }
+
+    // if there is at least one legal move for any of the player's piece, then it's not checkmate
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 8; j++) {
+        // skip empty square and piece of the other color
+        if (board[i][j] == null || board[i][j]!.isWhite != isWhiteKing) {
+          continue;
+        }
+        List<List<int>> pieceValidMoves =
+            calculateRealValidMoves(i, j, board[i][j], true);
+
+        // if this piece has any valid moves, then it's not checkmate
+        if (pieceValidMoves.isNotEmpty) {
+          return false;
+        }
+      }
+    }
+    // if none of the above candittin are met, then there are no legal moves left to make
+    // it's check mate!
+    return true;
+  }
+
+  // RESET TO NEW GAME
+  void resetGame() {
+    Navigator.pop(context);
+    _initializedBoard();
+    checkStatus = false;
+    whitePieceTaken.clear();
+    blackPieceTaken.clear();
+    whiteKingPosition = [7, 4];
+    whiteKingPosition = [0, 4];
+    isWhiteTurn = true;
+
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -547,7 +605,7 @@ class _GameBoardState extends State<GameBoard> {
           ),
 
           // GAME STATUS
-          Text(checkStatus ? "Whoops!" : ""),
+          Text(checkStatus ? " کیش!" : ""),
 
           // CHESS BOARD
           Expanded(
@@ -588,10 +646,10 @@ class _GameBoardState extends State<GameBoard> {
           // WHITE PIECE TAKEN
           Expanded(
             child: GridView.builder(
-              physics: NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(),
               itemCount: blackPieceTaken.length,
-              gridDelegate:
-                  SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 8),
               itemBuilder: (context, index) => DeadPiece(
                 imagePath: blackPieceTaken[index].imagePath,
                 isWhite: false,
